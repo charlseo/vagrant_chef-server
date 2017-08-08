@@ -1,0 +1,33 @@
+# Author: Charlie Seo - Watson Health Cloud Operations AP
+# Chef-Server 12.2.0
+# OS: Centos 7
+
+CHEF_SERVER_INSTALL = <<-EOF
+#!/bin/sh
+test -d /opt/chef-server || {
+  echo "Installing chef-server via omnibus"
+  curl -L -s 'https://packages.chef.io/files/stable/chef-server/12.15.8/el/7/chef-server-core-12.15.8-1.el7.x86_64.rpm' > chef-server.rpm
+  rpm -Uvh chef-server.rpm
+  /opt/opscode/bin/chef-server-ctl reconfigure >/dev/null
+}
+EOF
+
+Vagrant.configure("2") do |config|
+   config.vm.box = "minimal/centos7"
+   config.vm.box_version = "7.0"
+   config.ssh.username = "root"
+   config.ssh.password = "vagrant"
+   config.ssh.insert_key = "true"
+   config.vm.network "forwarded_port", guest:80, host: 8080
+   config.vm.network "private_network", ip: "192.168.27.13"
+   config.vm.network :forwarded_port, guest: 22, host: 2522, auto_correct: false, id: "ssh"
+   config.vm.provider "virtualbox" do |vb|
+     vb.gui = true
+   end
+
+   config.vm.provision :shell, :inline => CHEF_SERVER_INSTALL   
+#   config.vm.provision "chef_solo" do |chef|
+#     chef.cookbooks_path = "./cookbooks/chef-server/recipes/default.rb"
+#   end
+end
+
